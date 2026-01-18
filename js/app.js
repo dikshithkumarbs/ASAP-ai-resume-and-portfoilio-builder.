@@ -204,7 +204,6 @@ class ResumeBuilder {
         document.getElementById('export-doc-btn')?.addEventListener('click', () => this.exportDOC());
         document.getElementById('print-btn')?.addEventListener('click', () => pdfGenerator.printResume());
         document.getElementById('share-btn')?.addEventListener('click', () => this.shareResume());
-        document.getElementById('export-portfolio-btn')?.addEventListener('click', () => this.exportPortfolio());
         document.getElementById('uniqueness-btn')?.addEventListener('click', () => this.checkUniqueness());
     }
 
@@ -219,6 +218,25 @@ class ResumeBuilder {
         }
     }
 
+    // Export portfolio
+    exportPortfolio() {
+        this.collectFormData();
+        if (!this.data.personalInfo.fullName) {
+            alert('Please add your Personal Information first.');
+            this.goToStep(1);
+            return;
+        }
+
+        // Use current color theme for portfolio
+        const theme = document.getElementById('color-theme-select')?.value || 'default';
+        if (typeof PortfolioGenerator !== 'undefined') {
+            PortfolioGenerator.downloadPortfolio(this.data, theme);
+            // Show hosting instructions
+            PortfolioGenerator.showHostingInstructions();
+        } else {
+            console.error('PortfolioGenerator not loaded');
+        }
+    }
     // AI enhancement and ATS listeners
     setupAIListeners() {
         document.getElementById('linkedin-import-trigger')?.addEventListener('click', () => this.toggleLinkedInImport());
@@ -232,6 +250,89 @@ class ResumeBuilder {
 
         // GitHub Import event handler
         document.addEventListener('github-import', (e) => this.handleGitHubImport(e.detail.projects));
+    }
+
+    // Generate professional summary
+    async generateSummary() {
+        this.collectFormData();
+
+        const industry = document.getElementById('summary-industry')?.value || 'technology';
+        const tone = document.getElementById('summary-tone')?.value || 'professional';
+
+        if (!this.data.personalInfo.fullName || !this.data.skills.technical.length) {
+            alert('Please add your name and at least one technical skill first.');
+            return;
+        }
+
+        const btn = document.getElementById('generate-summary-btn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '✨ Generating...';
+
+        try {
+            const summary = await aiEngine.generateSummary(
+                this.data.personalInfo,
+                this.data.education,
+                this.data.skills,
+                industry,
+                tone
+            );
+
+            if (summary) {
+                const summaryEl = document.getElementById('summary-text');
+                summaryEl.value = summary;
+                this.data.summary = summary;
+                this.updatePreview();
+                this.scheduleAutoSave();
+            }
+        } catch (error) {
+            console.error('Summary generation failed:', error);
+            alert('Failed to generate summary. Please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    // Generate cover letter
+    async generateCoverLetter() {
+        const jobTitle = document.getElementById('job-title')?.value;
+        const company = document.getElementById('job-company')?.value;
+        const tone = document.getElementById('cover-letter-tone')?.value;
+
+        if (!jobTitle || !company) {
+            alert('Please enter the Job Title and Company Name first.');
+            return;
+        }
+
+        const btn = document.getElementById('generate-cover-btn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '✨ Writing...';
+
+        try {
+            // Ensure data is up to date
+            this.collectFormData();
+
+            const coverLetter = await aiEngine.generateCoverLetter(
+                this.data,
+                jobTitle,
+                company,
+                tone
+            );
+
+            if (coverLetter) {
+                document.getElementById('cover-letter-text').value = coverLetter;
+                // Scroll to result
+                document.getElementById('cover-letter-text').scrollIntoView({ behavior: 'smooth' });
+            }
+        } catch (error) {
+            console.error('Cover letter generation failed:', error);
+            alert('Failed to generate cover letter. Please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
     }
 
     // Handle GitHub Import - add projects to resume
@@ -1116,26 +1217,7 @@ class ResumeBuilder {
         }
     }
 
-    // Export Portfolio
-    exportPortfolio() {
-        this.collectFormData();
 
-        if (!this.data.personalInfo?.fullName) {
-            this.showNotification('Please add your personal information first', 'error');
-            return;
-        }
-
-        // Get selected color theme from UI
-        const selectedTheme = document.getElementById('color-theme-select')?.value || 'default';
-
-        if (typeof PortfolioGenerator !== 'undefined') {
-            const filename = `${this.data.personalInfo.fullName || 'portfolio'}`.replace(/\s+/g, '_').toLowerCase();
-            PortfolioGenerator.downloadPortfolio(this.data, selectedTheme, filename);
-            this.showNotification('Portfolio downloaded with your selected theme!', 'success');
-        } else {
-            this.showNotification('Portfolio generator not available', 'error');
-        }
-    }
 
     // Preview Portfolio in new tab
     previewPortfolio() {
@@ -1149,62 +1231,7 @@ class ResumeBuilder {
         }
     }
 
-    // AI Features
-    async generateSummary() {
-        this.showNotification('Generating AI-powered summary...', 'info');
 
-        const tone = document.getElementById('summary-tone')?.value || 'professional';
-        const industry = document.getElementById('summary-industry')?.value || 'technology';
-
-        try {
-            let summary;
-
-            // Priority 1: Use Gemini API (best quality)
-            if (typeof aiEngine !== 'undefined' && !CONFIG.AI?.DEMO_MODE && CONFIG.AI?.API_KEY) {
-                summary = await aiEngine.generateSummary(
-                    this.data.personalInfo,
-                    this.data.education,
-                    this.data.skills,
-                    industry,
-                    tone
-                );
-            }
-            // Priority 2: Use Hugging Face API
-            else if (typeof huggingFaceAPI !== 'undefined' && !CONFIG.HUGGINGFACE?.DEMO_MODE) {
-                summary = await huggingFaceAPI.generateProfessionalSummary(this.data);
-            }
-            // Priority 3: Smart template generation
-            else if (typeof SmartContent !== 'undefined') {
-                summary = SmartContent.generateSummary(this.data, tone);
-            }
-            // Fallback
-            else {
-                summary = `Results-driven professional with expertise in ${this.data.skills?.technical?.slice(0, 3).join(', ') || 'various technologies'}. Proven track record of delivering high-quality solutions.`;
-            }
-
-            this.data.summary = summary;
-            const summaryTextarea = document.getElementById('summary-text');
-            if (summaryTextarea) {
-                summaryTextarea.value = summary;
-            }
-
-            this.saveData();
-            this.updatePreview();
-            this.showNotification('✨ AI Summary generated!', 'success');
-        } catch (error) {
-            this.showNotification('Failed to generate summary. Using fallback.', 'error');
-            console.error('Summary generation error:', error);
-
-            // Fallback to SmartContent
-            if (typeof SmartContent !== 'undefined') {
-                const fallbackSummary = SmartContent.generateSummary(this.data, tone);
-                this.data.summary = fallbackSummary;
-                document.getElementById('summary-text').value = fallbackSummary;
-                this.saveData();
-                this.updatePreview();
-            }
-        }
-    }
 
     async enhanceExperience() {
         this.showNotification('Enhancing experience descriptions...', 'info');
@@ -1417,46 +1444,7 @@ class ResumeBuilder {
         }
     }
 
-    // Generate cover letter
-    async generateCoverLetter() {
-        this.collectFormData();
 
-        const jobTitle = document.getElementById('job-title')?.value || '';
-        const jobCompany = document.getElementById('job-company')?.value || '';
-        const jobDescription = document.getElementById('job-description')?.value || '';
-        const tone = document.getElementById('cover-letter-tone')?.value || 'formal';
-
-        if (!jobTitle || !jobCompany) {
-            this.showNotification('Please enter job title and company name', 'error');
-            return;
-        }
-
-        this.jobInfo = {
-            title: jobTitle,
-            company: jobCompany,
-            description: jobDescription
-        };
-
-        this.showNotification('Generating cover letter with AI...', 'info');
-
-        try {
-            const coverLetter = await coverLetterGen.generateCoverLetter(
-                this.data,
-                this.jobInfo,
-                tone
-            );
-
-            const coverLetterTextarea = document.getElementById('cover-letter-text');
-            if (coverLetterTextarea) {
-                coverLetterTextarea.value = coverLetter;
-            }
-
-            this.showNotification('Cover letter generated!', 'success');
-        } catch (error) {
-            this.showNotification('Failed to generate cover letter', 'error');
-            console.error(error);
-        }
-    }
 
     // Copy cover letter to clipboard
     async copyCoverLetterToClipboard() {
@@ -1503,29 +1491,7 @@ class ResumeBuilder {
         this.showNotification('Cover letter downloaded!', 'success');
     }
 
-    // Export portfolio with selected theme
-    exportPortfolio() {
-        this.collectFormData();
 
-        // Use the main color theme selector for portfolio
-        const themeSelect = document.getElementById('color-theme-select');
-        const selectedTheme = themeSelect?.value || 'default';
-
-        if (!this.data.personalInfo?.fullName) {
-            this.showNotification('Please add your name before generating a portfolio', 'error');
-            return;
-        }
-
-        this.showNotification('Generating portfolio...', 'info');
-
-        // Use PortfolioGenerator with selected theme
-        if (typeof PortfolioGenerator !== 'undefined') {
-            PortfolioGenerator.previewPortfolio(this.data, selectedTheme);
-            this.showNotification('Portfolio opened in new tab!', 'success');
-        } else {
-            this.showNotification('Portfolio generator not available', 'error');
-        }
-    }
 
     // Set color theme
     setColorTheme(theme) {
