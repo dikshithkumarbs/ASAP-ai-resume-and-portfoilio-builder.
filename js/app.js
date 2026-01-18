@@ -124,6 +124,24 @@ class ResumeBuilder {
         controlsBar.classList.toggle('show');
     }
 
+    // Toggle Mobile Preview overlay
+    toggleMobilePreview() {
+        const previewPanel = document.querySelector('.preview-panel');
+        previewPanel.classList.toggle('mobile-visible');
+
+        // Update button icon
+        const btn = document.getElementById('mobile-preview-toggle');
+        if (btn) {
+            if (previewPanel.classList.contains('mobile-visible')) {
+                btn.textContent = '❌'; // Close icon
+                btn.title = "Close Preview";
+            } else {
+                btn.textContent = '👁️'; // Eye icon
+                btn.title = "Show Preview";
+            }
+        }
+    }
+
     // Interactive step indicator listeners
     setupStepNavigationListeners() {
         const indicators = document.querySelectorAll('.step-indicator');
