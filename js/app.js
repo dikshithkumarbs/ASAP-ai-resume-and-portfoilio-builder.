@@ -115,13 +115,57 @@ class ResumeBuilder {
         document.getElementById('next-btn')?.addEventListener('click', () => this.nextStep());
         document.getElementById('prev-btn')?.addEventListener('click', () => this.prevStep());
         document.getElementById('mobile-preview-toggle')?.addEventListener('click', () => this.toggleMobilePreview());
-        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => this.toggleMobileMenu());
+
+        const mobileMenuBtn = document.getElementById('mobile-menu-toggle');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent immediate closing
+                this.toggleMobileMenu();
+            });
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const controlsBar = document.querySelector('.controls-bar');
+            const menuBtn = document.getElementById('mobile-menu-toggle');
+
+            // If menu is open (show class) and click is NOT inside controls bar AND NOT on the menu button
+            if (controlsBar && controlsBar.classList.contains('show') &&
+                !controlsBar.contains(e.target) &&
+                e.target !== menuBtn &&
+                !menuBtn.contains(e.target)) {
+
+                this.closeMobileMenu();
+            }
+        });
     }
 
     // Toggle Mobile Menu
     toggleMobileMenu() {
         const controlsBar = document.querySelector('.controls-bar');
-        controlsBar.classList.toggle('show');
+        const menuBtn = document.getElementById('mobile-menu-toggle');
+
+        const isOpening = controlsBar.classList.toggle('show');
+
+        if (menuBtn) {
+            menuBtn.classList.toggle('active', isOpening);
+            menuBtn.innerHTML = isOpening ? '&#10005;' : '&#9776;'; // Toggle between X and Burger using HTML entities or standard chars
+            menuBtn.setAttribute('aria-expanded', isOpening);
+        }
+    }
+
+    // Close Mobile Menu Helper
+    closeMobileMenu() {
+        const controlsBar = document.querySelector('.controls-bar');
+        const menuBtn = document.getElementById('mobile-menu-toggle');
+
+        if (controlsBar) controlsBar.classList.remove('show');
+
+        if (menuBtn) {
+            menuBtn.classList.remove('active');
+            menuBtn.innerHTML = '&#9776;';
+            menuBtn.setAttribute('aria-expanded', 'false');
+        }
     }
 
     // Toggle Mobile Preview overlay

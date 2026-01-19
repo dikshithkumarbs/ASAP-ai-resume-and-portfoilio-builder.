@@ -79,6 +79,8 @@
                     <button id="redo-btn" class="btn btn-secondary" title="Redo">↷</button>
                 </div>
                 <button id="theme-toggle-btn" class="theme-toggle-btn" title="Dark/Light Mode">🌙</button>
+                <button id="resume-import-trigger" class="btn btn-secondary" title="Import Resume"
+                    onclick="ResumeParser.showImportModal()">📥 Import</button>
                 <button id="clear-btn" class="btn btn-secondary" title="Clear Trash">🗑️</button>
 
             </div>
@@ -98,6 +100,8 @@
                         <option value="custom">Custom...</option>
                     </select>
                 </div>
+                <button id="export-portfolio-btn" class="btn btn-primary" title="Export as Portfolio Website">🌐
+                    Portfolio</button>
                 <div class="color-picker-container" id="custom-color-container" style="display: none;">
                     <input type="color" id="custom-color-picker" class="color-picker-input">
                 </div>
