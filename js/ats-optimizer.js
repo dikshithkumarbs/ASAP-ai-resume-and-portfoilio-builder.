@@ -3,7 +3,8 @@ class ATSOptimizer {
     constructor() {
         this.commonATSKeywords = {
             technical: ['programming', 'development', 'software', 'engineering', 'coding', 'debugging', 'testing', 'deployment', 'architecture', 'design'],
-            soft: ['leadership', 'communication', 'teamwork', 'problem-solving', 'analytical', 'collaborative', 'innovative', 'efficient', 'organized', 'detail-oriented']
+            soft: ['leadership', 'communication', 'teamwork', 'problem-solving', 'analytical', 'collaborative', 'innovative', 'efficient', 'organized', 'detail-oriented'],
+            action: ['developed', 'implemented', 'designed', 'led', 'managed', 'built', 'created', 'improved', 'increased', 'reduced', 'delivered', 'coordinated', 'analyzed', 'optimized', 'launched']
         };
 
         this.atsUnfriendlyElements = [
@@ -325,7 +326,8 @@ class ATSOptimizer {
             }
 
             const resumeText = this.flattenResumeToText(resumeData);
-            const hasActionVerbs = this.commonATSKeywords.action.some(verb =>
+            const actionVerbs = (typeof Utils !== 'undefined' && Utils.ACTION_VERBS) ? Utils.ACTION_VERBS : this.commonATSKeywords.action;
+            const hasActionVerbs = actionVerbs.some(verb =>
                 resumeText.toLowerCase().includes(verb)
             );
 
