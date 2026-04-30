@@ -17,8 +17,6 @@
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/reference-templates.css">
-    <link rel="stylesheet" href="css/mobile-menu.css">
 
     <!-- html2pdf.js for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -100,13 +98,10 @@
                         <option value="custom">Custom...</option>
                     </select>
                 </div>
-                <button id="export-portfolio-btn" class="btn btn-primary" title="Export as Portfolio Website">🌐
-                    Portfolio</button>
+                <button id="export-portfolio-btn" class="btn btn-primary" title="Export as Portfolio Website">🌐 Portfolio</button>
                 <div class="color-picker-container" id="custom-color-container" style="display: none;">
                     <input type="color" id="custom-color-picker" class="color-picker-input">
                 </div>
-
-                <button id="export-portfolio-btn" class="btn btn-ai" title="Create Website">🌐 Portfolio</button>
                 <button id="export-doc-btn" class="btn btn-secondary" title="Download Word 97-2003 (ATS-Safe)">📝
                     DOC</button>
                 <button id="export-docx-btn" class="btn btn-secondary" title="Download Word">📝 DOCX</button>
@@ -512,7 +507,7 @@
                     <div class="form-grid" style="margin-bottom: 2rem;">
                         <div class="form-group">
                             <label class="form-label">Cover Letter Tone</label>
-                            <select id="cover-letter-tone" class="form-select">
+                            <select id="cover-letter-tone-step7" class="form-select">
                                 <option value="formal">Formal & Traditional</option>
                                 <option value="enthusiastic">Enthusiastic & Driven</option>
                                 <option value="modern">Modern & Direct</option>
@@ -646,23 +641,17 @@
     <script src="js/error-boundary.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/storage.js"></script>
-    <script src="js/huggingface-api.js"></script>
 
     <!-- Feature Modules -->
-    <script src="js/resume-styles.js"></script>
-    <script src="js/smart-content.js"></script>
-    <script src="js/job-description-matcher.js"></script>
     <script src="js/grammar-checker.js"></script>
     <script src="js/linkedin-import.js"></script>
     <script src="js/github-import.js"></script>
     <script src="js/docx-export.js"></script>
     <script src="js/privacy-manager.js"></script>
-    <script src="js/transcript-parser.js"></script>
-    <script src="js/resume-prompts.js"></script>
     <script src="js/uniqueness-checker.js"></script>
     <script src="js/undo-redo.js"></script>
 
-    <!-- Legacy/Existing Feature Modules -->
+    <!-- Core Feature Modules -->
     <script src="js/portfolio-generator.js"></script>
     <script src="js/ai-engine.js"></script>
     <script src="js/ats-optimizer.js"></script>
@@ -670,7 +659,7 @@
     <script src="js/templates.js"></script>
     <script src="js/pdf-generator.js"></script>
 
-    <!-- Resume Parser - Import/Parse existing resumes -->
+    <!-- Resume Parser -->
     <script src="js/resume-parser.js"></script>
 
     <!-- App Entry Point -->
@@ -718,7 +707,7 @@
             const achievementsInput = entry.querySelector('.achievement-input');
 
             if (!title || !company) {
-                alert('Please fill in job title and company first');
+                if (window.app) app.showNotification('Please fill in job title and company first', 'warning');
                 return;
             }
 
@@ -741,7 +730,7 @@
             const technologies = entry.querySelector('.proj-technologies').value.split(',').map(t => t.trim());
 
             if (!projectName || !description) {
-                alert('Please fill in project name and description first');
+                if (window.app) app.showNotification('Please fill in project name and description first', 'warning');
                 return;
             }
 

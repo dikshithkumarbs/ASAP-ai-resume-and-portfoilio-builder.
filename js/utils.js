@@ -3,6 +3,15 @@
 
 const Utils = {
     // ============================================
+    // CONSTANTS
+    // ============================================
+    ACTION_VERBS: [
+        'developed', 'implemented', 'designed', 'created', 'built', 'optimized',
+        'improved', 'managed', 'led', 'coordinated', 'achieved', 'delivered',
+        'spearheaded', 'orchestrated', 'streamlined', 'pioneered', 'established'
+    ],
+
+    // ============================================
     // DATE PARSING & FORMATTING
     // ============================================
 

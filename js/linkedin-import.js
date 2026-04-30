@@ -198,6 +198,19 @@ class LinkedInImport {
             if (techField) techField.value = resumeData.skills.technical.join(', ');
         }
 
+        // Use ResumeParser helpers to fill remaining lists if available
+        if (typeof ResumeParser !== 'undefined') {
+            if (resumeData.education?.length > 0) {
+                ResumeParser.fillEducation(resumeData.education);
+            }
+            if (resumeData.experience?.length > 0) {
+                ResumeParser.fillExperience(resumeData.experience);
+            }
+            if (resumeData.projects?.length > 0) {
+                ResumeParser.fillProjects(resumeData.projects);
+            }
+        }
+
         // Trigger form update
         if (typeof app !== 'undefined') {
             app.scheduleAutoSave();

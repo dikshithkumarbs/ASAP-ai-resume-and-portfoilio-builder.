@@ -40,13 +40,14 @@ class CoverLetterGenerator {
     async generateCoverLetter(resumeData, jobInfo, tone = 'formal') {
         const toneConfig = this.tones[tone] || this.tones.formal;
 
-        // Use AI if available
-        if (!CONFIG.AI.DEMO_MODE && CONFIG.AI.API_KEY) {
+        // Use AI if backend is responsive (by attempting AI generation first)
+        try {
             return await this.generateWithAI(resumeData, jobInfo, toneConfig);
+        } catch (e) {
+            console.log("AI Cover Letter generation failed, falling back to templates.");
+            // Fallback to template-based generation
+            return this.generateWithTemplate(resumeData, jobInfo, tone, toneConfig);
         }
-
-        // Fallback to template-based generation
-        return this.generateWithTemplate(resumeData, jobInfo, toneConfig);
     }
 
     // AI-powered generation
@@ -57,8 +58,8 @@ class CoverLetterGenerator {
             const response = await aiEngine.callGeminiAPI(prompt);
             return this.formatCoverLetter(response, resumeData, toneConfig);
         } catch (error) {
-            console.error('AI generation failed, using template:', error);
-            return this.generateWithTemplate(resumeData, jobInfo, toneConfig);
+            console.error('AI generation failed:', error);
+            throw error; // Let the caller fallback
         }
     }
 
@@ -94,8 +95,9 @@ Return ONLY the cover letter text, no extra formatting or explanations.`;
     }
 
     // Template-based generation
-    generateWithTemplate(resumeData, jobInfo, toneConfig) {
-        const template = this.templates.standard;
+    generateWithTemplate(resumeData, jobInfo, toneKey, toneConfig) {
+        const templateKey = toneKey.toLowerCase();
+        const template = this.templates[templateKey] || this.templates.standard;
         return template(resumeData, jobInfo, toneConfig);
     }
 

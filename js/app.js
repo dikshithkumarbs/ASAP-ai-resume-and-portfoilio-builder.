@@ -358,12 +358,12 @@ class ResumeBuilder {
             // Ensure data is up to date
             this.collectFormData();
 
-            const coverLetter = await aiEngine.generateCoverLetter(
-                this.data,
-                jobTitle,
-                company,
-                tone
-            );
+            const jobInfo = { title: jobTitle, company: company };
+            
+            // Use CoverLetterGenerator instead of bypassing it
+            const coverLetter = await (typeof coverLetterGen !== 'undefined' ? 
+                coverLetterGen.generateCoverLetter(this.data, jobInfo, tone) : 
+                aiEngine.generateCoverLetter(this.data, jobTitle, company, tone));
 
             if (coverLetter) {
                 document.getElementById('cover-letter-text').value = coverLetter;
@@ -372,7 +372,7 @@ class ResumeBuilder {
             }
         } catch (error) {
             console.error('Cover letter generation failed:', error);
-            alert('Failed to generate cover letter. Please try again.');
+            this.showNotification('Failed to generate cover letter. Please try again.', 'error');
         } finally {
             btn.disabled = false;
             btn.textContent = originalText;

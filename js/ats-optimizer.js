@@ -3,8 +3,7 @@ class ATSOptimizer {
     constructor() {
         this.commonATSKeywords = {
             technical: ['programming', 'development', 'software', 'engineering', 'coding', 'debugging', 'testing', 'deployment', 'architecture', 'design'],
-            soft: ['leadership', 'communication', 'teamwork', 'problem-solving', 'analytical', 'collaborative', 'innovative', 'efficient', 'organized', 'detail-oriented'],
-            action: ['developed', 'implemented', 'designed', 'created', 'built', 'optimized', 'improved', 'managed', 'led', 'coordinated', 'achieved', 'delivered']
+            soft: ['leadership', 'communication', 'teamwork', 'problem-solving', 'analytical', 'collaborative', 'innovative', 'efficient', 'organized', 'detail-oriented']
         };
 
         this.atsUnfriendlyElements = [
@@ -31,17 +30,6 @@ class ATSOptimizer {
             (scores.readability * 0.15)
         );
 
-        // Debug: log score breakdown to help diagnose issues
-        console.log('ATS Score Breakdown:', {
-            format: scores.format,
-            keywords: scores.keywords,
-            structure: scores.structure,
-            readability: scores.readability,
-            overall: scores.overall,
-            hasName: !!resumeData.personalInfo?.fullName,
-            hasSummary: !!resumeData.summary,
-            dataSnapshot: JSON.stringify(resumeData).substring(0, 200)
-        });
 
         return {
             score: scores.overall,
@@ -88,8 +76,8 @@ class ATSOptimizer {
         }
 
         if (!jobDescription || jobDescription.trim() === '') {
-            // No job description - check for general action verbs and keywords
-            const hasActionVerbs = this.commonATSKeywords.action.some(verb =>
+            const actionVerbs = (typeof Utils !== 'undefined') ? Utils.ACTION_VERBS : ['developed', 'implemented', 'designed'];
+            const hasActionVerbs = actionVerbs.some(verb =>
                 resumeText.toLowerCase().includes(verb)
             );
             const hasTechnicalKeywords = this.commonATSKeywords.technical.some(keyword =>
@@ -183,7 +171,8 @@ class ATSOptimizer {
             const hasActionVerbs = resumeData.experience.some(exp => {
                 if (!exp.achievements) return false;
                 const achievementText = exp.achievements.join(' ').toLowerCase();
-                return this.commonATSKeywords.action.some(verb => achievementText.includes(verb));
+                const actionVerbs = (typeof Utils !== 'undefined') ? Utils.ACTION_VERBS : ['developed'];
+                return actionVerbs.some(verb => achievementText.includes(verb));
             });
 
             if (!hasActionVerbs) score -= 15;
@@ -250,44 +239,7 @@ class ATSOptimizer {
 
     // Convert resume data to plain text
     flattenResumeToText(resumeData) {
-        let text = [];
-
-        if (resumeData.personalInfo) {
-            text.push(resumeData.personalInfo.fullName || '');
-        }
-
-        if (resumeData.summary) {
-            text.push(resumeData.summary);
-        }
-
-        if (resumeData.education) {
-            resumeData.education.forEach(edu => {
-                text.push(edu.degree, edu.institution);
-            });
-        }
-
-        if (resumeData.experience) {
-            resumeData.experience.forEach(exp => {
-                text.push(exp.title, exp.company);
-                if (exp.achievements) {
-                    text.push(...exp.achievements);
-                }
-            });
-        }
-
-        if (resumeData.skills) {
-            if (resumeData.skills.technical) text.push(...resumeData.skills.technical);
-            if (resumeData.skills.soft) text.push(...resumeData.skills.soft);
-        }
-
-        if (resumeData.projects) {
-            resumeData.projects.forEach(proj => {
-                text.push(proj.name, proj.description);
-                if (proj.technologies) text.push(...proj.technologies);
-            });
-        }
-
-        return text.join(' ');
+        return (typeof Utils !== 'undefined') ? Utils.resumeToText(resumeData) : '';
     }
 
     // Check for quantifiable metrics

@@ -9,19 +9,50 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Allowed origins — localhost for dev, Vercel URL for production
+const ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://ai-res-port.vercel.app'
+];
+
 // Security Middleware
 app.use(helmet({
-    contentSecurityPolicy: false // Disable CSP for simplicity in this demo, enable for production
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'unpkg.com'],
+            styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+            fontSrc: ["'self'", 'fonts.gstatic.com'],
+            connectSrc: ["'self'", 'api.languagetool.org', 'api.github.com'],
+            imgSrc: ["'self'", 'data:', 'blob:'],
+            objectSrc: ["'none'"],
+            frameSrc: ["'none'"]
+        }
+    }
 }));
-app.use(cors());
-app.use(express.json());
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl) in dev
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error(`CORS policy: origin ${origin} not allowed`));
+        }
+    },
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+}));
+
+app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, '.')));
 
 // Rate Limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again later.'
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: 'Too many requests from this IP, please try again later.' }
 });
 app.use('/api/', limiter);
 
@@ -39,11 +70,22 @@ app.post('/api/generate-content', async (req, res) => {
     try {
         const { prompt, model } = req.body;
 
+        // Input validation
+        if (!prompt || typeof prompt !== 'string') {
+            return res.status(400).json({ error: 'prompt is required and must be a string' });
+        }
+        if (prompt.length > 8000) {
+            return res.status(400).json({ error: 'prompt exceeds maximum length of 8000 characters' });
+        }
+
         if (!process.env.GEMINI_API_KEY) {
             return res.status(500).json({ error: 'Gemini API Key not configured on server' });
         }
 
-        const aiModel = model || 'gemini-1.5-flash';
+        const aiModel = (typeof model === 'string' && model.startsWith('gemini'))
+            ? model
+            : 'gemini-1.5-flash';
+
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
         const response = await fetch(url, {
@@ -66,12 +108,11 @@ app.post('/api/generate-content', async (req, res) => {
         }
 
         const data = await response.json();
-        // Extract text safely
         const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
         res.json({ text: generatedText });
 
     } catch (error) {
-        console.error('Gemini Proxy Error:', error);
+        console.error('Gemini Proxy Error:', error.message);
         res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
@@ -81,11 +122,15 @@ app.post('/api/huggingface', async (req, res) => {
     try {
         const { inputs, model, parameters } = req.body;
 
+        if (!inputs || typeof inputs !== 'string') {
+            return res.status(400).json({ error: 'inputs is required and must be a string' });
+        }
+
         if (!process.env.HF_API_KEY) {
             return res.status(500).json({ error: 'Hugging Face API Key not configured on server' });
         }
 
-        const hfModel = model || 'google/flan-t5-base';
+        const hfModel = (typeof model === 'string') ? model : 'google/flan-t5-base';
         const url = `https://api-inference.huggingface.co/models/${hfModel}`;
 
         const response = await fetch(url, {
@@ -106,7 +151,7 @@ app.post('/api/huggingface', async (req, res) => {
         res.json(data);
 
     } catch (error) {
-        console.error('HF Proxy Error:', error);
+        console.error('HF Proxy Error:', error.message);
         res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });

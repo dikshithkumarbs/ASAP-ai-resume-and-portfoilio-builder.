@@ -436,15 +436,9 @@ class DocxExport {
         return html;
     }
 
-    // Escape HTML special characters
+    // Delegate to shared Utils — prevents duplicate implementations
     escapeHtml(text) {
-        if (!text) return '';
-        return text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+        return (typeof Utils !== 'undefined') ? Utils.escapeHTML(text) : (text || '');
     }
 }
 

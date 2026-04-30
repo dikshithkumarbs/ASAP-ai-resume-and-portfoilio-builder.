@@ -539,7 +539,6 @@ class InputValidator {
     }
 }
 
-// Initialize on DOM ready
 let undoRedoManager;
 let characterCounter;
 let inputValidator;
@@ -548,6 +547,10 @@ document.addEventListener('DOMContentLoaded', () => {
     undoRedoManager = new UndoRedoManager();
     characterCounter = new CharacterCounter();
     inputValidator = new InputValidator();
+
+    // Export to window after initialization
+    window.undoRedoManager = undoRedoManager;
+    window.inputValidator = inputValidator;
 
     // Save initial state
     setTimeout(() => {
@@ -565,7 +568,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-// Export for use in other modules
-window.undoRedoManager = undoRedoManager;
-window.inputValidator = inputValidator;
